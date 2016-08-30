@@ -47,12 +47,33 @@ class ForumController extends Controller
     {
         $this->validate($request, $this->rules);
 
+        $body = $request['body'];
+        $doc = new \DOMDocument();
+
+        // load the HTML string we want to strip
+        $doc->loadHTML($body);
+
+        // get all the script tags
+        $script_tags = $doc->getElementsByTagName('script');
+
+        $length = $script_tags->length;
+
+        // for each tag, remove it from the DOM
+        for ($i = 0; $i < $length; $i++) {
+          $script_tags->item($i)->parentNode->removeChild($script_tags->item($i));
+        }
+
+        // get the HTML string back
+        $body = $doc->saveHTML();
+
+        $body = preg_replace('/^<\?php(.*)(\?>)?$/s', '$1', $body);
+
     	$post = new Post();
 
         $post->user_id = Auth::user()->id;
     	$post->category_id = $request['category'];
         $post->title = $request['title'];
-        $post->body = $request['body'];
+        $post->body = $body;
 
         $post->save();
 
